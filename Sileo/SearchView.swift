@@ -20,7 +20,7 @@ struct SearchView: View {
                 Section {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            chip("全部", nil)
+                            chip("All", nil)
                             ForEach(Catalog.sections, id: \.self) { chip($0, $0) }
                         }
                         .padding(.horizontal, 16)
@@ -36,21 +36,21 @@ struct SearchView: View {
                         }
                     } header: {
                         HStack {
-                            Text("搜索历史")
+                            Text("Recently Searched")
                             Spacer()
-                            Button("清除") { store.history = [] }.font(.footnote)
+                            Button("Clear") { store.history = [] }.font(.footnote)
                         }
                     }
                 }
-                Section(q.isEmpty ? "全部软件包" : "搜索结果（\(results.count)）") {
+                Section(q.isEmpty ? "All Packages" : "Results (\(results.count))") {
                     ForEach(results) { p in NavigationLink(value: p) { PkgRow(p: p) } }
                 }
             }
-            .navigationTitle("搜索")
-            .searchable(text: $q, placement: .navigationBarDrawer(displayMode: .always), prompt: "搜索软件包")
+            .navigationTitle("Search")
+            .searchable(text: $q, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search for Packages")
             .onSubmit(of: .search) { store.addHistory(q) }
             .overlay {
-                if results.isEmpty { Text("未找到相关软件包").foregroundStyle(.secondary) }
+                if results.isEmpty { Text("No packages found").foregroundStyle(.secondary) }
             }
             .sileoDestinations()
         }

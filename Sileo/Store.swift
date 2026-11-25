@@ -11,7 +11,7 @@ final class Store: ObservableObject {
         var autoRefresh: Bool
     }
 
-    private let key = "sileo.state.v1"
+    private let key = "sileo.state.v2"
 
     @Published var repos: [Repo] { didSet { save() } }
     @Published var installed: [String: String] { didSet { save() } }
@@ -30,15 +30,15 @@ final class Store: ObservableObject {
             repos = Catalog.repos
             installed = Self.seedInstalled
             history = []
-            logs = [LogEntry(text: "欢迎使用 Sileo（模拟环境）")]
+            logs = [LogEntry(text: "Welcome to Sileo")]
             appearance = 0
             autoRefresh = true
         }
     }
 
     private static let seedInstalled = [
-        "org.core.libswift": "5.9.0", "org.core.substrate": "0.4.2",
-        "com.lumen.dimmer": "2.3.0", "com.hack.netmon": "1.5.0",
+        "org.coolstar.libhooker": "1.6.9", "com.rpetrich.rocketbootstrap": "1.0.9",
+        "com.tigisoftware.filza": "4.0.0",
     ]
 
     private func save() {
@@ -58,21 +58,21 @@ final class Store: ObservableObject {
     var installedPkgs: [Pkg] { packages.filter { installed[$0.id] != nil } }
     var updates: [Pkg] { installedPkgs.filter { installed[$0.id] != $0.version } }
 
-    func repoName(_ id: String) -> String { repos.first { $0.id == id }?.name ?? "未知软件源" }
+    func repoName(_ id: String) -> String { repos.first { $0.id == id }?.name ?? "Unknown Source" }
     func count(in repo: Repo) -> Int { Catalog.all.filter { $0.repo == repo.id }.count }
 
     // MARK: 软件源管理
     func addRepo(url: String) {
         let host = URL(string: url)?.host ?? url
-        repos.append(Repo(id: UUID().uuidString, name: host, url: url, desc: "自定义软件源",
+        repos.append(Repo(id: UUID().uuidString, name: host, url: url, desc: "Custom source",
                           symbol: "shippingbox.fill", color: 0x636366))
-        log("添加软件源 \(url)")
+        log("Added source \(url)")
     }
     func update(_ r: Repo) {
-        if let i = repos.firstIndex(where: { $0.id == r.id }) { repos[i] = r; log("编辑软件源 \(r.name)") }
+        if let i = repos.firstIndex(where: { $0.id == r.id }) { repos[i] = r; log("Edited source \(r.name)") }
     }
     func removeRepos(at offsets: IndexSet) {
-        for i in offsets { log("删除软件源 \(repos[i].name)") }
+        for i in offsets { log("Removed source \(repos[i].name)") }
         repos.remove(atOffsets: offsets)
     }
 
@@ -88,11 +88,11 @@ final class Store: ObservableObject {
         logs.append(LogEntry(text: text))
         if logs.count > 200 { logs.removeFirst(logs.count - 200) }
     }
-    func refresh() { log("已刷新 \(repos.filter(\.enabled).count) 个软件源") }
+    func refresh() { log("Refreshed \(repos.filter(\.enabled).count) sources") }
 
     func reset() {
         repos = Catalog.repos; installed = Self.seedInstalled; history = []
-        logs = [LogEntry(text: "已重置模拟数据")]
+        logs = [LogEntry(text: "Demo data reset")]
     }
 
     // MARK: 模拟安装 / 卸载 / 更新
@@ -119,8 +119,8 @@ final class Store: ObservableObject {
             var n = 0
             for p in all {
                 let stages = op == .remove
-                    ? ["正在准备卸载 \(p.name)…", "正在移除文件…", "正在清理配置…"]
-                    : ["正在下载 \(p.name) (\(p.version))…", "正在解压…", "正在配置 \(p.name)…"]
+                    ? ["Preparing to remove \(p.name)…", "Removing files…", "Cleaning up…"]
+                    : ["Downloading \(p.name) (\(p.version))…", "Extracting…", "Configuring \(p.name)…"]
                 for s in stages {
                     job?.lines.append(s)
                     n += 1
@@ -128,10 +128,11 @@ final class Store: ObservableObject {
                     try? await Task.sleep(nanoseconds: 450_000_000)
                 }
                 if op == .remove { installed[p.id] = nil } else { installed[p.id] = p.version }
-                job?.lines.append("✓ \(op.rawValue)完成：\(p.name)")
+                let doneVerb = op == .remove ? "Removed" : (op == .update ? "Updated" : "Installed")
+                job?.lines.append("✓ \(doneVerb): \(p.name)")
                 log("\(op.rawValue) \(p.name) \(p.version)")
             }
-            job?.lines.append("所有操作已完成（模拟）。")
+            job?.lines.append("All operations completed.")
             job?.phase = .done
         }
     }

@@ -12,7 +12,7 @@ struct DetailView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(p.name).font(.system(size: 22, weight: .bold))
                         Text(p.author).font(.system(size: 14)).foregroundStyle(Color.sileoTint)
-                        Text("版本 \(p.version)").font(.system(size: 13)).foregroundStyle(.secondary)
+                        Text("Version \(p.version)").font(.system(size: 13)).foregroundStyle(.secondary)
                         HStack(spacing: 8) { buttons }.padding(.top, 6)
                     }
                 }
@@ -39,32 +39,32 @@ struct DetailView: View {
                     }
                 }
 
-                card("描述") { Text(p.details).font(.system(size: 15)) }
-                card("更新日志") {
+                card("Description") { Text(p.details).font(.system(size: 15)) }
+                card("Changelog") {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("版本 \(p.version)").font(.system(size: 13, weight: .semibold))
+                        Text("Version \(p.version)").font(.system(size: 13, weight: .semibold))
                         Text(p.changelog).font(.system(size: 14)).foregroundStyle(.secondary)
                     }
                 }
                 if !p.depends.isEmpty {
-                    card("依赖") {
+                    card("Dependencies") {
                         VStack(alignment: .leading, spacing: 8) {
                             ForEach(p.depends, id: \.self) { d in
                                 HStack {
                                     Text(Catalog.pkg(d)?.name ?? d).font(.system(size: 15))
                                     Spacer()
-                                    Text(store.installed[d] != nil ? "已安装" : "将自动安装")
+                                    Text(store.installed[d] != nil ? "Installed" : "Will be installed automatically")
                                         .font(.system(size: 12)).foregroundStyle(.secondary)
                                 }
                             }
                         }
                     }
                 }
-                card("详细信息") {
+                card("Details") {
                     VStack(spacing: 10) {
-                        row("软件包标识", p.id); row("版本", p.version)
-                        row("大小", ByteCountFormatter.string(fromByteCount: Int64(p.size) * 1024, countStyle: .file))
-                        row("分类", p.section); row("软件源", store.repoName(p.repo)); row("作者", p.author)
+                        row("Package ID", p.id); row("Version", p.version)
+                        row("Size", ByteCountFormatter.string(fromByteCount: Int64(p.size) * 1024, countStyle: .file))
+                        row("Section", p.section); row("Source", store.repoName(p.repo)); row("Author", p.author)
                     }
                 }
             }
@@ -76,10 +76,10 @@ struct DetailView: View {
 
     @ViewBuilder private var buttons: some View {
         if let iv = store.installed[p.id] {
-            if iv != p.version { GetButton(title: "更新") { store.prepare(.update, [p]) } }
-            GetButton(title: "卸载", destructive: true) { store.prepare(.remove, [p]) }
+            if iv != p.version { GetButton(title: "Upgrade") { store.prepare(.update, [p]) } }
+            GetButton(title: "Uninstall", destructive: true) { store.prepare(.remove, [p]) }
         } else {
-            GetButton(title: "获取") { store.prepare(.install, [p]) }
+            GetButton(title: "Get") { store.prepare(.install, [p]) }
         }
     }
 

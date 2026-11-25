@@ -17,7 +17,7 @@ struct QueueView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     if j.phase == .confirm {
-                        ToolbarItem(placement: .navigationBarLeading) { Button("取消") { close() } }
+                        ToolbarItem(placement: .navigationBarLeading) { Button("Cancel") { close() } }
                     }
                 }
                 .interactiveDismissDisabled(j.phase == .running)
@@ -27,26 +27,26 @@ struct QueueView: View {
     }
 
     private func title(_ j: Job) -> String {
-        switch j.phase { case .confirm: return "队列"; case .running: return "正在\(j.op.rawValue)"; case .done: return "完成" }
+        switch j.phase { case .confirm: return "Queue"; case .running: return "\(j.op.rawValue)ing"; case .done: return "Done" }
     }
     private func close() { store.job = nil }
 
     private func confirm(_ j: Job) -> some View {
         VStack(spacing: 0) {
             List {
-                Section("将要\(j.op.rawValue)") { ForEach(j.pkgs) { r($0) } }
-                if !j.deps.isEmpty { Section("依赖（自动安装）") { ForEach(j.deps) { r($0) } } }
+                Section("Will \(j.op.rawValue)") { ForEach(j.pkgs) { r($0) } }
+                if !j.deps.isEmpty { Section("Dependencies (auto-installed)") { ForEach(j.deps) { r($0) } } }
                 Section {
                     let kb = (j.pkgs + j.deps).reduce(0) { $0 + $1.size }
                     HStack {
-                        Text(j.op == .remove ? "释放空间" : "下载大小").foregroundStyle(.secondary)
+                        Text(j.op == .remove ? "Free Space" : "Download Size").foregroundStyle(.secondary)
                         Spacer()
                         Text(ByteCountFormatter.string(fromByteCount: Int64(kb) * 1024, countStyle: .file))
                     }
                 }
             }
             Button { store.run() } label: {
-                Text("确认").font(.system(size: 17, weight: .bold)).frame(maxWidth: .infinity).padding(.vertical, 14)
+                Text("Confirm").font(.system(size: 17, weight: .bold)).frame(maxWidth: .infinity).padding(.vertical, 14)
                     .foregroundStyle(.white)
                     .background(j.op == .remove ? Color.red : Color.sileoTint, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
@@ -80,7 +80,7 @@ struct QueueView: View {
             }
             if j.phase == .done {
                 Button { close() } label: {
-                    Text("完成").font(.system(size: 17, weight: .bold)).frame(maxWidth: .infinity).padding(.vertical, 14)
+                    Text("Done").font(.system(size: 17, weight: .bold)).frame(maxWidth: .infinity).padding(.vertical, 14)
                         .foregroundStyle(.white).background(Color.sileoTint, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
                 .padding(16)

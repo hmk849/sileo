@@ -11,7 +11,7 @@ extension Color {
                   blue: Double(hex & 0xFF) / 255,
                   opacity: alpha)
     }
-    static let sileoTint = Color(hex: 0x7C5CFF)
+    static let sileoTint = Color(hex: 0x2CB1BE)
 }
 
 /// 全应用唯一的玻璃效果入口。

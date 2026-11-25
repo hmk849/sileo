@@ -1,6 +1,8 @@
 # Sileo（iOS 仿真应用）
 
-SwiftUI · iOS 16+ · 纯本地模拟，不依赖越狱，不安装真实 Deb。
+SwiftUI · iOS 17+ · 纯本地模拟，不依赖越狱，不安装真实 Deb。
+
+v1.1.0：界面按真 Sileo 2.5.1 还原——英文界面、Featured / News / Packages / Sources / Search 五个 Tab、官方青色主题（#2CB1BE）、真 Sileo 图标、BigBoss / Chariz / Havoc / Procursus 软件源与真实软件包名录。
 
 ## 运行
 1. `brew install xcodegen`

@@ -5,12 +5,17 @@ struct RootView: View {
 
     var body: some View {
         TabView {
-            HomeView().tabItem { Label("精选", systemImage: "sparkles") }
-            SourcesView().tabItem { Label("软件源", systemImage: "square.stack.3d.up.fill") }
-            ChangesView().tabItem { Label("更改", systemImage: "clock.arrow.circlepath") }
+            FeaturedView()
+                .tabItem { Label("Featured", systemImage: "star.fill") }
+            NewsView()
+                .tabItem { Label("News", systemImage: "newspaper.fill") }
                 .badge(store.updates.count)
-            InstalledView().tabItem { Label("已安装", systemImage: "shippingbox.fill") }
-            SearchView().tabItem { Label("搜索", systemImage: "magnifyingglass") }
+            PackagesView()
+                .tabItem { Label("Packages", systemImage: "shippingbox.fill") }
+            SourcesView()
+                .tabItem { Label("Sources", systemImage: "square.stack.3d.up.fill") }
+            SearchView()
+                .tabItem { Label("Search", systemImage: "magnifyingglass") }
         }
         .sheet(item: $store.job) { _ in QueueView() }
     }
@@ -34,20 +39,26 @@ struct PkgRow: View {
             PkgIcon(symbol: p.symbol, color: p.color, size: 52)
             VStack(alignment: .leading, spacing: 2) {
                 Text(p.name).font(.system(size: 16, weight: .semibold)).lineLimit(1)
-                Text(p.summary).font(.system(size: 13)).foregroundStyle(.secondary).lineLimit(1)
-                Text("\(p.author) · \(p.version)").font(.system(size: 12)).foregroundStyle(.tertiary)
+                Text("\(p.author) · \(p.version)").font(.system(size: 13)).foregroundStyle(.secondary).lineLimit(1)
+                Text(p.summary).font(.system(size: 12)).foregroundStyle(.tertiary).lineLimit(1)
             }
             Spacer(minLength: 4)
             if store.installed[p.id] != nil {
-                Image(systemName: "checkmark.circle.fill").foregroundStyle(Color.sileoTint)
+                if store.installed[p.id] != p.version {
+                    GetButton(title: "Upgrade") { store.prepare(.update, [p]) }
+                } else {
+                    GetButton(title: "Modify") { store.prepare(.remove, [p]) }
+                }
+            } else {
+                GetButton(title: "Get") { store.prepare(.install, [p]) }
             }
         }
         .contentShape(Rectangle())
     }
 }
 
-// MARK: 精选
-struct HomeView: View {
+// MARK: Featured
+struct FeaturedView: View {
     @EnvironmentObject var store: Store
     @State private var showSettings = false
     @State private var seed = 0
@@ -68,7 +79,7 @@ struct HomeView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 10) {
-                        header("分类")
+                        header("Categories")
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                             ForEach(Catalog.sections, id: \.self) { s in
                                 NavigationLink(value: s) {
@@ -87,7 +98,7 @@ struct HomeView: View {
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
-                        header("推荐软件包")
+                        header("Recommended Packages")
                         let list = Array(store.packages.shuffled(seed: seed).prefix(6))
                         ForEach(list) { p in
                             NavigationLink(value: p) { PkgRow(p: p).padding(.horizontal, 16).padding(.vertical, 8) }
@@ -98,7 +109,7 @@ struct HomeView: View {
                 .padding(.top, 8).padding(.bottom, 24)
             }
             .background(Color(.systemGroupedBackground))
-            .navigationTitle("精选")
+            .navigationTitle("Featured")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button { showSettings = true } label: { Image(systemName: "gearshape.fill") }
@@ -159,13 +170,73 @@ struct FeaturedCard: View {
     }
 }
 
-// MARK: 分类 / 列表
+// MARK: Packages tab
+struct PackagesView: View {
+    @EnvironmentObject var store: Store
+
+    var body: some View {
+        NavigationStack {
+            List {
+                Section {
+                    NavigationLink(value: "__all") {
+                        HStack(spacing: 12) {
+                            PkgIcon(symbol: "tray.full.fill", color: 0x2CB1BE, size: 40)
+                            Text("All Packages").font(.system(size: 16, weight: .medium))
+                            Spacer()
+                            Text("\(store.packages.count)").foregroundStyle(.secondary)
+                        }
+                    }
+                    NavigationLink(value: "__installed") {
+                        HStack(spacing: 12) {
+                            PkgIcon(symbol: "shippingbox.fill", color: 0x34C759, size: 40)
+                            Text("Installed Packages").font(.system(size: 16, weight: .medium))
+                            Spacer()
+                            Text("\(store.installedPkgs.count)").foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                Section("Categories") {
+                    ForEach(Catalog.sections, id: \.self) { s in
+                        NavigationLink(value: s) {
+                            HStack(spacing: 12) {
+                                PkgIcon(symbol: "folder.fill", color: 0x8E8E93, size: 40)
+                                Text(s).font(.system(size: 16, weight: .medium))
+                                Spacer()
+                                Text("\(store.packages.filter { $0.section == s }.count)").foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Packages")
+            .refreshable {
+                try? await Task.sleep(nanoseconds: 900_000_000)
+                store.refresh()
+            }
+            .sileoDestinations()
+        }
+    }
+}
+
+// MARK: Category / list
 struct SectionListView: View {
     @EnvironmentObject var store: Store
     let section: String
 
     var items: [Pkg] {
-        store.packages.filter { section == "__all" || $0.section == section }.sorted { $0.name < $1.name }
+        switch section {
+        case "__all": return store.packages.sorted { $0.name < $1.name }
+        case "__installed": return store.installedPkgs.sorted { $0.name < $1.name }
+        default: return store.packages.filter { $0.section == section }.sorted { $0.name < $1.name }
+        }
+    }
+
+    var title: String {
+        switch section {
+        case "__all": return "All Packages"
+        case "__installed": return "Installed Packages"
+        default: return section
+        }
     }
 
     var body: some View {
@@ -173,8 +244,8 @@ struct SectionListView: View {
             NavigationLink(value: p) { PkgRow(p: p) }
         }
         .listStyle(.plain)
-        .navigationTitle(section == "__all" ? "全部软件包" : section)
+        .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
-        .overlay { if items.isEmpty { Text("暂无软件包").foregroundStyle(.secondary) } }
+        .overlay { if items.isEmpty { Text("No packages").foregroundStyle(.secondary) } }
     }
 }

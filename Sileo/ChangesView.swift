@@ -1,10 +1,10 @@
 import SwiftUI
 
-struct ChangesView: View {
+struct NewsView: View {
     @EnvironmentObject var store: Store
 
     var recent: [(Pkg, String)] {
-        let days = ["今天", "今天", "昨天", "昨天", "2 天前", "3 天前", "5 天前", "1 周前"]
+        let days = ["Today", "Today", "Yesterday", "Yesterday", "2 days ago", "3 days ago", "5 days ago", "1 week ago"]
         return store.packages.enumerated().map { ($0.element, days[$0.offset % days.count]) }
     }
 
@@ -24,14 +24,14 @@ struct ChangesView: View {
                         }
                     } header: {
                         HStack {
-                            Text("可用更新（\(store.updates.count)）")
+                            Text("Available Updates (\(store.updates.count))")
                             Spacer()
-                            Button("全部更新") { store.prepare(.update, store.updates) }
+                            Button("Update All") { store.prepare(.update, store.updates) }
                                 .font(.footnote.bold())
                         }
                     }
                 }
-                Section("最近更新") {
+                Section("Recently Updated") {
                     ForEach(recent, id: \.0.id) { p, day in
                         NavigationLink(value: p) {
                             VStack(alignment: .leading, spacing: 4) {
@@ -48,38 +48,10 @@ struct ChangesView: View {
                     }
                 }
             }
-            .navigationTitle("更改")
+            .navigationTitle("News")
             .refreshable {
                 try? await Task.sleep(nanoseconds: 900_000_000)
                 store.refresh()
-            }
-            .sileoDestinations()
-        }
-    }
-}
-
-struct InstalledView: View {
-    @EnvironmentObject var store: Store
-
-    var body: some View {
-        NavigationStack {
-            List {
-                ForEach(store.installedPkgs) { p in
-                    NavigationLink(value: p) { PkgRow(p: p) }
-                        .swipeActions {
-                            Button("卸载", role: .destructive) { store.prepare(.remove, [p]) }
-                        }
-                }
-            }
-            .listStyle(.plain)
-            .navigationTitle("已安装")
-            .overlay {
-                if store.installedPkgs.isEmpty {
-                    VStack(spacing: 8) {
-                        Image(systemName: "shippingbox").font(.system(size: 44)).foregroundStyle(.tertiary)
-                        Text("尚未安装任何软件包").foregroundStyle(.secondary)
-                    }
-                }
             }
             .sileoDestinations()
         }
